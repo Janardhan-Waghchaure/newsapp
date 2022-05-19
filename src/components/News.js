@@ -1,6 +1,8 @@
 import React, { Component } from 'react'
 import NewsItem from './NewsItem'
 
+import Loading from './spinner';
+
 export default class News extends Component {
 
   constructor() {
@@ -10,7 +12,7 @@ export default class News extends Component {
       loading: false,
       page: 1,
       TotalnumberOfArticles: 0,
-      numberOfPages: 20// this much of pages will be loaded ones when we make an https request
+     
     };
     // console.log("hello , iam constructor ");
   }
@@ -24,7 +26,9 @@ export default class News extends Component {
 
 
     // pageSize is set to 20 set number of news for one html page will be 20.
-    let url = `https://newsapi.org/v2/top-headlines?page=${this.state.page}&country=in&apiKey=52a48f3c30b644f49951a1729c6533aa&pageSize=${this.state.numberOfPages}`;
+    let url = `https://newsapi.org/v2/top-headlines?page=${this.state.page}&country=in&apiKey=52a48f3c30b644f49951a1729c6533aa&pageSize=${this.props.pageSize}`;
+
+    this.setState({loading: true});
 
     // programme will wait here until data gets fetched from the given url
     let data = await fetch(url);
@@ -39,7 +43,8 @@ export default class News extends Component {
 
         this.setState({
           news: output.articles,
-          TotalnumberOfArticles: output.totalResults
+          TotalnumberOfArticles: output.totalResults,
+          loading: false
         });
 
         // console.log(this.state);
@@ -58,12 +63,12 @@ export default class News extends Component {
 
     // fetching the next page only if there is some news remained inside the next page of news
 
-    if (this.state.page + 1 > Math.ceil(this.state.TotalnumberOfArticles / this.state.numberOfPages)) {
+    if (this.state.page + 1 > Math.ceil(this.state.TotalnumberOfArticles / this.props.pageSize)) {
 
 
     } else {
-      let url = `https://newsapi.org/v2/top-headlines?page=${this.state.page + 1}&country=in&apiKey=52a48f3c30b644f49951a1729c6533aa`;
-
+      let url = `https://newsapi.org/v2/top-headlines?page=${this.state.page + 1}&country=in&apiKey=52a48f3c30b644f49951a1729c6533aa&pageSize=${this.props.pageSize}`;
+      this.setState({loading: true});
       let data = await fetch(url);
 
       let parsedData = data.json();
@@ -73,7 +78,8 @@ export default class News extends Component {
 
           this.setState({
             news: output.articles,
-            page: this.state.page + 1
+            page: this.state.page + 1,
+            loading: false
           });
 
         })
@@ -86,8 +92,8 @@ export default class News extends Component {
   onPreviousClick = async () => {
 
 
-    let url = `https://newsapi.org/v2/top-headlines?page=${this.state.page - 1}&country=in&apiKey=52a48f3c30b644f49951a1729c6533aa`;
-
+    let url = `https://newsapi.org/v2/top-headlines?page=${this.state.page - 1}&country=in&apiKey=52a48f3c30b644f49951a1729c6533aa&pageSize=${this.props.pageSize}`;
+    this.setState({loading: true});
     let data = await fetch(url);
 
     let parsedData = data.json();
@@ -97,7 +103,8 @@ export default class News extends Component {
 
         this.setState({
           news: output.articles,
-          page: this.state.page - 1
+          page: this.state.page - 1,
+          loading: false
         });
 
       })
@@ -116,12 +123,14 @@ export default class News extends Component {
 
     return (
       <div className='container my-3'>
-        <h2> Top Headlines </h2>
+        <h2 className='text-center'> Top Headlines </h2>
+        {(this.state.loading) ? <Loading/>:<></>}
 
 
 
         <div className="row">
-          {this.state.news.map((article) => {
+          {/* below && syntax executes operant 2 only when first operand is true */}
+          {!this.state.loading && this.state.news.map((article) => {
             return <div className="col-md-4" key={article.url}>
               {/* note that unique key needs to be attached to the html/JSX element which we are returning hence passsing key to outer div and not to NewsItem element  */}
               <NewsItem title={(article.title != null) ? article.title : "Unknown"} description={(article.description != null) ? article.description : "Unknown"} imageUrl={(article.url !== null) ? article.urlToImage : "https://images.hindustantimes.com/img/2022/05/17/1600x900/Gyanvapi_Mosque_in_Varanasi_1652804779123_1652804779296.JPG"} newsUrl={article.url} />
@@ -131,9 +140,9 @@ export default class News extends Component {
         </div>
 
         <div className="ceter-container" style={{ display: "flex", justifyContent: "space-evenly", margin: "50px 0px" }}>
-          <button type="button" disabled={this.state.page - 1 < 1} className="btn btn-outline-primary " onClick={this.onPreviousClick}>Page {this.state.page - 1}</button>
+          {(this.state.page === 1)?<></>:<button type="button" disabled={this.state.page - 1 < 1} className="btn btn-outline-primary " onClick={this.onPreviousClick}>Page {this.state.page - 1}</button>}
           <span> Page {this.state.page} </span>
-          <button type="button" disabled={this.state.page + 1 > Math.ceil(this.state.TotalnumberOfArticles / this.state.numberOfPages) } className="btn btn-outline-primary " onClick={this.onNextClick}>Page {this.state.page + 1}</button>
+          <button type="button" disabled={this.state.page + 1 > Math.ceil(this.state.TotalnumberOfArticles / this.props.pageSize) } className="btn btn-outline-primary " onClick={this.onNextClick}>Page {this.state.page + 1}</button>
         </div>
 
 
